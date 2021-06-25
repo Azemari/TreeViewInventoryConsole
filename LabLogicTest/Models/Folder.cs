@@ -4,36 +4,54 @@ namespace LabLogicTest.Models
 {
     public class Folder : BaseItem
     {
-        public List<ItemStack> ItemStacks { get; set; }
+        public List<BaseItem> Nodes { get; set; }
 
-        public Folder(string name, Location location, List<ItemStack> itemStacks)
-           : base(name, location)
+        public Folder(string name, Location location, Folder parentFolder, RootNode rootNode, List<BaseItem> itemStacks)
+           : base(name, location, parentFolder, rootNode)
         {
-            ItemStacks = itemStacks;
+            Nodes = itemStacks;
+            Root = rootNode;
         }
 
-        public static void DeleteFolder(Folder folderToDelete)
+        public void MoveTo(RootNode newCategory)
         {
-            foreach (var itemStack in folderToDelete.ItemStacks)
-            {
-                itemStack.Items.Clear();
-            }
-
-            folderToDelete.ItemStacks.Clear();
-        }
-
-        public static void MoveFolder(Folder folderToMove, Location newLocation)
-        {
-            if (folderToMove.Location > newLocation)
+            if (this.Location > newCategory.Category)
                 return;
 
-            folderToMove.Location = newLocation;
-            foreach (var itemStack in folderToMove.ItemStacks)
+            //Setting it to the root node so it no longer has a parent
+            ParentFolder = null;
+            Location = newCategory.Category;
+
+            RecursivelyUpdateNodeLocation(Nodes, Location);
+            Root.Delete(this);
+            newCategory.Nodes.Add(this);
+
+        }
+
+        public void MoveTo(Folder parentFolder)
+        {
+            if (this.Location > parentFolder.Location)
+                return;
+
+            ParentFolder = parentFolder;
+            Location = parentFolder.Location;
+
+            RecursivelyUpdateNodeLocation(parentFolder.Nodes, parentFolder.Location);
+            parentFolder.Nodes.Add(this);
+            Root.Nodes.Remove(this);
+        }
+
+        public void RecursivelyUpdateNodeLocation(List<BaseItem> currentFolder, Location newLocation)
+        {
+            foreach (BaseItem node in currentFolder)
             {
-                itemStack.Location = newLocation;
-                foreach (var item in itemStack.Items)
+                node.Location = newLocation;
+            }
+            foreach (BaseItem folder in currentFolder)
+            {
+                if (folder is Folder nestedFolder)
                 {
-                    item.Location = newLocation;
+                    RecursivelyUpdateNodeLocation(nestedFolder.Nodes, newLocation);
                 }
             }
         }

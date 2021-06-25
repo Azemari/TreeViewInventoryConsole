@@ -45,9 +45,9 @@
   <ItemGroup>
     <Compile Include="Models\BaseItem.cs" />
     <Compile Include="Models\Folder.cs" />
-    <Compile Include="Models\Item.cs" />
     <Compile Include="Models\ItemStack.cs" />
     <Compile Include="Models\Location.cs" />
+    <Compile Include="Models\RootNode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

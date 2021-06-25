@@ -1,100 +1,108 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 
 namespace LabLogicTest.Models
 {
-    public class ItemStack
+    public class ItemStack : BaseItem
     {
-        public int Id { get; set; }
-        public Location Location { get; set; }
         public string Type { get; set; }
-        public List<Item> Items { get; set; }
-        public int? ParentNode { get; set; }
+        public int Quantity { get; set; }
 
-        public ItemStack(int id, Location location, string type, List<Item> items)
+        public ItemStack(string name, Location location, Folder parentFolder, RootNode rootNode, string type, int quantity)
+            : base(name, location, parentFolder, rootNode)
         {
-            Id = id;
-            Location = location;
             Type = type;
-            Items = items;
+            Quantity = quantity;
         }
 
         //Copy Constructor
         public ItemStack(ItemStack item) 
+            : base(item.Name, item.Location, item.ParentFolder, item.Root)
         {
-            Id = item.Id;
+            Id = Guid.NewGuid();
+            Name = item.Name;
             Location = item.Location;
+            ParentFolder = item.ParentFolder;
             Type = item.Type;
-            Items = item.Items;
+            Quantity = item.Quantity;
+            Root = item.Root;
         }
 
-        public static ItemStack Create(string itemName, Location location, string type, int numberofItems)
+        public void MoveTo(RootNode newLocation)
         {
-            List<Item> newItems = new List<Item>();
-            for (int i = 0; i < numberofItems; i++)
-            {
-                newItems.Add(new Item(itemName, location, type));
-            }
-            return new ItemStack(1, location, type, newItems);
+            if (this.Location > newLocation.Category)
+                return;
+            if (ParentFolder != null)
+                ParentFolder.Nodes.Remove(this);
+            else
+                Root.Nodes.Remove(this);
+
+            newLocation.Nodes.Add(this);
+
+            ParentFolder = null; 
+            Location = newLocation.Category;
         }
 
-        public static void Delete(ItemStack itemToDelete)
+        public void MoveTo(Folder newFolder)
         {
-            itemToDelete.Items.Clear();
-        }
-
-        public static void Move(ItemStack itemStackToMove, Location newLocation)
-        {
-            //only allow moving forward through catergories 
-            if (itemStackToMove.Location > newLocation)
+            if (this.Location > newFolder.Location)
                 return;
 
-            itemStackToMove.Location = newLocation;
-            foreach (var item in itemStackToMove.Items)
-            {
-                item.Location = newLocation;
-            }
+            if (ParentFolder != null)
+                ParentFolder.Nodes.Remove(this);
+            else
+                Root.Nodes.Remove(this);
+
+            newFolder.Nodes.Add(this);
+
+            ParentFolder = newFolder;
+            Location = newFolder.Location;
         }
 
-        public static ItemStack Split(ItemStack itemStack, int newStackSize)
+        public void Split(int newStackSize)
         {
-            if (newStackSize > itemStack.Items.Count)
-                return null;
+            if (newStackSize > Quantity)
+                return;
 
-            ItemStack newItemStack = new ItemStack(itemStack)
+            ItemStack splitItem = new ItemStack(this)
             {
-                Items = itemStack.Items.Take(newStackSize).ToList()
+                Quantity = newStackSize
             };
 
-            itemStack.Items.RemoveRange(0, newStackSize);
+            Quantity -= newStackSize;
 
-            return newItemStack;
+            Root.Nodes.Add(splitItem);
         }
 
-        public static void Merge(ItemStack itemStackToMergeInto, ItemStack itemStackToBeMerged)
+        public void Merge(ItemStack mergeInto)
         {
-            if (itemStackToMergeInto.Location != itemStackToBeMerged.Location
+            if (this.Location != mergeInto.Location
                 ||
-                itemStackToMergeInto.Type != itemStackToBeMerged.Type)
+                this.Type.ToLower() != mergeInto.Type.ToLower())
                 return ;
 
-            itemStackToMergeInto.Items = itemStackToMergeInto.Items.Concat(itemStackToBeMerged.Items).ToList();
+            mergeInto.Quantity += Quantity;
 
-            itemStackToBeMerged.Items.Clear();
+            if (this.ParentFolder != null)
+                ParentFolder.Nodes.Remove(this);
+            else
+                Root.Nodes.Remove(this);
         }
 
-        public static void UseOne(ItemStack itemStack)
+        public void UseOne(RootNode usedNode)
         {
-            if(itemStack.Items.Count > 1)
+            if(Quantity > 1)
             {
-                Item item = itemStack.Items.Take(1).First();
-                item.Location = Location.Used;
-                itemStack.Items.Remove(item);
+                Quantity--;
             }
             else
             {
-                Move(itemStack, Location.Used);
+                if (this.ParentFolder != null)
+                    ParentFolder.Nodes.Remove(this);
+                else
+                    Root.Nodes.Remove(this);
             }
+
+            usedNode.Nodes.Add(new ItemStack(this) { Quantity = 1 });
         }
     }
 }

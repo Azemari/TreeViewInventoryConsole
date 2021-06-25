@@ -49,10 +49,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Folder\Folder_Tests.cs" />
-    <Compile Include="ItemStack\ItemStack_Split_Tests.cs" />
-    <Compile Include="ItemStack\ItemStack_Merge_Tests.cs" />
-    <Compile Include="ItemStack\ItemStack_Tests.cs" />
+    <Compile Include="ItemStack_Tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
